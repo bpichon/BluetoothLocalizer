@@ -34,7 +34,7 @@ public class SendDataTask extends AsyncTask<Void, Void, Boolean> {
             socket.close();
 
         } catch(UnknownHostException e) {
-            System.out.println("Unknown host: www.example.com");
+            System.out.println("Unknown host");
         } catch(IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {

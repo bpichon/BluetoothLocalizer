@@ -11,24 +11,80 @@ import java.util.List;
 
 public class DatabaseHelper {
 
-	private DatabaseHelper dbHelper;
+	private static DatabaseHelper dbHelper;
 	private Connection c;
+
+    public void init() throws SQLException {
+        final Statement s = c.createStatement();
+        String dropQuery = "DROP TABLE IF EXISTS COLLECTED_DATA";
+        s.executeUpdate(dropQuery);
+
+        String createQuery = "CREATE TABLE IF NOT EXISTS COLLECTED_DATA " +
+                "(ID            INT     NOT NULL    PRIMARY KEY," +
+                " device_id     TEXT    NOT NULL, " +
+                " time          INT     NOT NULL, " +
+                " longitude     INT, " +
+                " latitude      INT, " +
+                " accuracy      INT)";
+        s.executeUpdate(createQuery);
+    }
 	
-	public DatabaseHelper getInstance() {
+	public static DatabaseHelper getInstance() {
 		if (dbHelper == null) {
 			try {
 				dbHelper = new DatabaseHelper();
 			} catch (SQLException e) {
-				return null; // Wenn Connector nicht init werden kann return null.
+				e.printStackTrace();
+                return null; // Wenn Connector nicht init werden kann return null.
 			}
 		}
 		return dbHelper;
 	}
 	
 	private DatabaseHelper() throws SQLException {
-		c = DriverManager.getConnection("jdbc:mysql://localhost:3306/soccer", "root", "");
-		
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException ex) {
+            ex.printStackTrace();
+        }
+		c = DriverManager.getConnection("jdbc:sqlite:test.db");
+        init();
 	}
+
+    public void insertDevice(String deviceId, int time) {
+        String query = "INSERT INTO `COLLECTED_DATA` (`id`, `device_id`, `time`, `longitude`, `latitude`, `accuracy`) VALUES (0, '" + deviceId + "', " + time + ", 0, 0, 0);";
+        try {
+            final Statement s = c.createStatement();
+            s.executeUpdate(query);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Debugging Method. Prints all devices
+     */
+    public void printAll() {
+        try {
+            final Statement s = c.createStatement();
+            ResultSet resultSet;
+            resultSet = s.executeQuery(""
+                    + "SELECT * "
+                    + "FROM `COLLECTED_DATA`");
+
+            while (resultSet.next()) {
+                System.out.printf(
+                        "DevId: '%s' | Long: %s Lat: %s | Time: %s | Acc: %s\n",
+                        resultSet.getString("device_id"),
+                        resultSet.getDouble("longitude"),
+                        resultSet.getDouble("latitude"),
+                        resultSet.getDouble("time"),
+                        resultSet.getDouble("accuracy"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 	
 	public ArrayList<DeviceInfo> getAllDevices(List<String> deviceIds, int time) {
 		try {
